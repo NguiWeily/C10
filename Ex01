@@ -1,0 +1,117 @@
+Files to turn in : Makefile, and files needed for your program
+Allowed functions : close, open, read, write, strerror, basename
+
+• Create a program called ft_cat which does the same thing as the system’s cat
+command-line.
+• You don’t have to handle options.
+• The submission directory should have a Makefile with the following rules : all,
+clean, fclean.
+• You may use the variable errno (check the man for Errno).
+• You should read the man of all the authorized functions
+• You can only do this exercise by declaring a fixed-sized array. This array will have
+a size limited to a little less than 30 ko. In order to test that size-limit, use the
+ulimit command-line in your Shell.
+
+Here's an example Makefile for the `ft_cat` program:
+
+```makefile
+NAME = ft_cat
+SRC = ft_cat.c
+OBJ = $(SRC:.c=.o)
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror
+
+all: $(NAME)
+
+$(NAME): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+
+clean:
+	rm -f $(OBJ)
+
+fclean: clean
+	rm -f $(NAME)
+
+re: fclean all
+
+.PHONY: all clean fclean re
+```
+
+You can use this Makefile to compile the `ft_cat` program. It assumes that you have a source file named `ft_cat.c`. Adjust the file name if necessary.
+
+Here's an example implementation of the `ft_cat` program:
+
+```c
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <libgen.h>
+
+#define BUFFER_SIZE 4096
+
+void display_error(char *filename)
+{
+    char *base = basename(filename);
+    char *error = strerror(errno);
+    write(2, base, strlen(base));
+    write(2, ": ", 2);
+    write(2, error, strlen(error));
+    write(2, "\n", 1);
+}
+
+void display_file(char *filename)
+{
+    int fd;
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_read;
+
+    fd = open(filename, O_RDONLY);
+    if (fd == -1)
+    {
+        display_error(filename);
+        return;
+    }
+
+    while ((bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
+    {
+        if (write(1, buffer, bytes_read) == -1)
+        {
+            display_error(filename);
+            break;
+        }
+    }
+
+    if (bytes_read == -1)
+    {
+        display_error(filename);
+    }
+
+    close(fd);
+}
+
+int main(int argc, char *argv[])
+{
+    int i;
+
+    if (argc == 1)
+    {
+        display_file("/dev/stdin");
+    }
+    else
+    {
+        for (i = 1; i < argc; i++)
+        {
+            display_file(argv[i]);
+        }
+    }
+
+    return 0;
+}
+```
+
+This program emulates the behavior of the `cat` command-line utility. It reads and displays the content of one or multiple files specified as command-line arguments. If no arguments are provided, it reads from standard input. The program uses the `open`, `read`, `write`, and `close` functions to handle file I/O and the `strerror` function to retrieve error messages.
+
+To compile the program, navigate to the directory containing the Makefile and run the command `make`. This will generate the `ft_cat` binary. Use `make clean` to remove the object files, `make fclean` to remove the object files and the binary, and `make re` to clean and recompile the program.
+
+Make sure to adjust the code and the Makefile according to your needs and specifications.
