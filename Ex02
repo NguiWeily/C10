@@ -1,0 +1,145 @@
+Files to turn in : Makefile, and files needed for your program
+Allowed functions : close, open, read, write, malloc, free, strerror,
+basename
+
+• Create a program called ft_tail which does the same thing as the system command
+tail.
+• The only option you have to handle is -c, but you don’t need to handle ’+’ or ’-’
+signs.
+• all the test will be done with the -c option.
+• The submission directory should have a Makefile with the following rules : all,
+clean, fclean.
+• You may use the variable errno.
+
+Here's an example Makefile for the `ft_tail` program:
+
+```makefile
+NAME = ft_tail
+SRC = ft_tail.c
+OBJ = $(SRC:.c=.o)
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror
+
+all: $(NAME)
+
+$(NAME): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+
+clean:
+	rm -f $(OBJ)
+
+fclean: clean
+	rm -f $(NAME)
+
+re: fclean all
+
+.PHONY: all clean fclean re
+```
+
+You can use this Makefile to compile the `ft_tail` program. It assumes that you have a source file named `ft_tail.c`. Adjust the file name if necessary.
+
+Here's an example implementation of the `ft_tail` program:
+
+```c
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <libgen.h>
+
+#define BUFFER_SIZE 4096
+
+void display_error(char *filename)
+{
+    char *base = basename(filename);
+    char *error = strerror(errno);
+    write(2, base, strlen(base));
+    write(2, ": ", 2);
+    write(2, error, strlen(error));
+    write(2, "\n", 1);
+}
+
+void display_tail(char *filename, int count)
+{
+    int fd;
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_read;
+    off_t offset, file_size;
+
+    fd = open(filename, O_RDONLY);
+    if (fd == -1)
+    {
+        display_error(filename);
+        return;
+    }
+
+    file_size = lseek(fd, 0, SEEK_END);
+    if (file_size == -1)
+    {
+        display_error(filename);
+        close(fd);
+        return;
+    }
+
+    offset = lseek(fd, -count, SEEK_END);
+    if (offset == -1)
+    {
+        display_error(filename);
+        close(fd);
+        return;
+    }
+
+    while ((bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
+    {
+        if (write(1, buffer, bytes_read) == -1)
+        {
+            display_error(filename);
+            break;
+        }
+    }
+
+    if (bytes_read == -1)
+    {
+        display_error(filename);
+    }
+
+    close(fd);
+}
+
+int main(int argc, char *argv[])
+{
+    int count;
+
+    if (argc != 4)
+    {
+        display_error("Usage: ft_tail -c count file");
+        return 1;
+    }
+
+    if (strcmp(argv[1], "-c") != 0)
+    {
+        display_error("Invalid option. Usage: ft_tail -c count file");
+        return 1;
+    }
+
+    count = atoi(argv[2]);
+    if (count <= 0)
+    {
+        display_error("Invalid count. Usage: ft_tail -c count file");
+        return 1;
+    }
+
+    display_tail(argv[3], count);
+
+    return 0;
+}
+```
+
+This program emulates the behavior of the `tail` command-line utility with the `-c` option. It reads the last `count` bytes from the specified file and displays them. The program uses the `open`, `read`, `write`, and `close` functions to handle file I/O, the `lseek` function to seek to the appropriate position in the file, and the `strerror` function to retrieve error messages.
+
+To compile the program, navigate to the directory containing the Makefile and run the command `make`. This will generate the `ft_tail` binary. Use `make clean` to remove the object files, `make fclean` to remove the
+
+ object files and the binary, and `make re` to clean and recompile the program.
+
+Make sure to adjust the code and the Makefile according to your needs and specifications.
